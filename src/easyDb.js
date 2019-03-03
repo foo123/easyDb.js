@@ -13,7 +13,7 @@ else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
-}(  /* current root */          this,
+}(  /* current root */          'undefined' !== typeof self ? self : this,
     /* module name */           "easyDb",
     /* module factory */        function ModuleFactory__easyDb( undef ){
 "use strict";
@@ -45,6 +45,7 @@ Db[PROTO] = {
     // by default use Mysql-like quotes
     quotes: ["'","'","\\'","\\'"],
     config: null,
+    insertId: null,
     
     dispose: function( ) {
         this.config = null;
@@ -62,6 +63,10 @@ Db[PROTO] = {
     
     exec: function( sql, repl, cb ){
         throw NotImplemented;
+    },
+    
+    lastInsertId: function( ){
+        return this.insertId || null;
     },
     
     queryPromise: function( sql ){
@@ -122,32 +127,42 @@ Db[PROTO] = {
         }
         if ( 'function' === typeof cb ) cb(null, ve);
         return ve;
+    },
+    
+    escapeId: function( v, cb ) {
+        var ve = v;
+        if ( 'function' === typeof cb ) cb(null, ve);
+        return ve;
     }
 };
 Db.DRIVER = {};
 
 // factory method to get appriopriate db driver implementation according to config
 Db.getDb = function(config){
+    config = config || {};
     var driver = config['driver'] ? (''+config['driver']).toLowerCase() : null;
     var db = null;
-    switch( backend )
+    switch( driver )
     {
-        case 'mariadb':
+        //case 'mariadb':
+        case 'mysqli':
         case 'mysql':
             if ( !Db.DRIVER.Mysql )
                 Db.DRIVER.Mysql = require('./drivers/Mysql.js')(Db);
-            db = new Db.DRIVER.Mysql(config['mysql'] || config['MYSQL']);
+            db = new Db.DRIVER.Mysql(config[driver] || config[driver.toUpperCase()] || config);
             break;
         case 'postgre':
+        case 'postgres':
         case 'postgresql':
             if ( !Db.DRIVER.Postgresql )
                 Db.DRIVER.Postgresql = require('./drivers/Postgresql.js')(Db);
-            db = new Db.DRIVER.Postgresql(config['postgresql'] || config['POSTGRESQL']);
+            db = new Db.DRIVER.Postgresql(config[driver] || config[driver.toUpperCase()] || config);
             break;
+        case 'sqlite3':
         case 'sqlite':
             if ( !Db.DRIVER.Sqlite )
                 Db.DRIVER.Sqlite = require('./drivers/Sqlite.js')(Db);
-            db = new Db.DRIVER.Sqlite(config['sqlite'] || config['SQLITE']);
+            db = new Db.DRIVER.Sqlite(config[driver] || config[driver.toUpperCase()] || config);
             break;
     }
     return db;

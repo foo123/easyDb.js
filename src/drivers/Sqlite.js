@@ -44,15 +44,41 @@ module.exports = function( Db ) {
     };
     
     Sqlite[PROTO].query = function( sql, cb ) {
-        this.connect().connection.run(''+sql, [], function(err,res){
-            // TODO, needs completion for select-type queries to return matched rows results
-            if ( err )
-            {
-                cb(err, null);
-                return;
-            }
-            cb(null, res);
-        });
+        var self = this;
+        sql = ''+sql;
+        // https://github.com/mapbox/node-sqlite3/issues/1125
+        if ( /^select\b/i.test(sql) )
+        {
+            this.connect().connection.all(sql, [], function(err,rows){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                // normalise result
+                var res;
+                res = rows;
+                cb(null, res);
+            });
+        }
+        else
+        {
+            this.connect().connection.run(sql, [], function(err){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                // normalise result
+                var res;
+                self.insertId = this.lastID || null;
+                res = {
+                    insertId: self.insertId,
+                    affectedRows: this.changes || null
+                };
+                cb(null, res);
+            });
+        }
         return this;
     };
 

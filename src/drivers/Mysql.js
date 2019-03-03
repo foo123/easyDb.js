@@ -35,6 +35,7 @@ module.exports = function( Db ) {
                 user: config.user,
                 password: config.password,
                 database: config.database,
+                charset: config.charset || 'UTF8_GENERAL_CI',
                 multipleStatements: !!config.multipleStatements,
                 debug: !!config.debug,
                 supportBigNumbers: !!config.supportBigNumbers,
@@ -54,13 +55,71 @@ module.exports = function( Db ) {
         return Db[PROTO].dispose.call(this);
     };
     
+    Mysql[PROTO].escape = function( s, cb ) {
+        var se = this.connect().connection.escape(''+s);
+        if ( 'function' === typeof cb ) cb(null, se);
+        return se;
+    };
+
+    Mysql[PROTO].escapeId = function( s, cb ) {
+        var se = this.connect().connection.escapeId(''+s);
+        if ( 'function' === typeof cb ) cb(null, se);
+        return se;
+    };
+
     Mysql[PROTO].query = function( sql, cb ) {
-        this.connect().connection.query(''+sql, cb);
+        var self = this;
+        sql = ''+sql;
+        this.connect().connection.query(sql, function(err, result, fields){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            // normalise result
+            var res;
+            if ( /^select\b/i.test(sql) )
+            {
+                res = result;
+            }
+            else
+            {
+                self.insertId = result.insertId || null;
+                res = {
+                    insertId: self.insertId,
+                    affectedRows: result.affectedRows /*|| result.changedRows*/ || null
+                };
+            }
+            cb(null, res);
+        });
         return this;
     };
 
     Mysql[PROTO].exec = function( sql, repl, cb ) {
-        this.connect().connection.execute(''+sql, repl, cb);
+        var self = this;
+        sql = ''+sql;
+        this.connect().connection.execute(sql, repl, function(err, result, fields){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            // normalise result
+            var res;
+            if ( /^select\b/i.test(sql) )
+            {
+                res = result;
+            }
+            else
+            {
+                self.insertId = result.insertId || null;
+                res = {
+                    insertId: self.insertId,
+                    affectedRows: result.affectedRows /*|| result.changedRows*/ || null
+                };
+            }
+            cb(null, res);
+        });
         return this;
     };
 

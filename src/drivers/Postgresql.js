@@ -32,13 +32,14 @@ module.exports = function( Db ) {
             this.connection = new pg.Client(!!config.connectionString ? {
               connectionString: config.connectionString
             } : {
+              host: config.host || 'localhost',
+              port: config.port || 3211,
               user: config.user,
               password: config.password,
-              host: config.host || 'localhost',
               database: config.database,
-              port: config.port || 3211,
               ssl: !!config.ssl ? config.ssl : null
-            }).connect{);
+            });
+            this.connection.connect();
         }
         return this;
     };
@@ -53,12 +54,59 @@ module.exports = function( Db ) {
     };
     
     Postgresql[PROTO].query = function( sql, cb ) {
-        this.connect().connection.query(''+sql, cb);
+        var self = this;
+        sql = ''+sql;
+        // https://github.com/brianc/node-postgres/issues/1846
+        this.connect().connection.query(sql, function(err, result){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            // normalise result
+            var res;
+            if ( /^select\b/i.test(sql) )
+            {
+                res = result.rows;
+            }
+            else
+            {
+                self.insertId = result.insertId || null;
+                res = {
+                    insertId: self.insertId,
+                    affectedRows: result.affectedRows || null
+                };
+            }
+            cb(null, res);
+        });
         return this;
     };
 
     Postgresql[PROTO].exec = function( sql, repl, cb ) {
-        this.connect().connection.query(''+sql, repl, cb);
+        var self = this;
+        sql = ''+sql;
+        this.connect().connection.query(sql, repl, function(err, result){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            // normalise result
+            var res;
+            if ( /^select\b/i.test(sql) )
+            {
+                res = result.rows;
+            }
+            else
+            {
+                self.insertId = result.insertId || null;
+                res = {
+                    insertId: self.insertId,
+                    affectedRows: result.affectedRows || null
+                };
+            }
+            cb(null, res);
+        });
         return this;
     };
 
