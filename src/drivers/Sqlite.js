@@ -47,7 +47,7 @@ module.exports = function( Db ) {
         var self = this;
         sql = ''+sql;
         // https://github.com/mapbox/node-sqlite3/issues/1125
-        if ( /^select\b/i.test(sql) )
+        if ( Db.SELECT_RE.test(sql) )
         {
             this.connect().connection.all(sql, [], function(err,rows){
                 if ( err )

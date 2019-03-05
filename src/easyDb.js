@@ -38,6 +38,7 @@ var Db = function(config) {
     this.config = config || {};
 };
 Db.VERSION = VERSION;
+Db.SELECT_RE = /^\s*select\b/i;
 Db[PROTO] = {
 
     constructor: Db,

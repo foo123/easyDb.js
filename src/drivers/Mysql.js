@@ -78,7 +78,7 @@ module.exports = function( Db ) {
             }
             // normalise result
             var res;
-            if ( /^select\b/i.test(sql) )
+            if ( Db.SELECT_RE.test(sql) )
             {
                 res = result;
             }
@@ -106,7 +106,7 @@ module.exports = function( Db ) {
             }
             // normalise result
             var res;
-            if ( /^select\b/i.test(sql) )
+            if ( Db.SELECT_RE.test(sql) )
             {
                 res = result;
             }
