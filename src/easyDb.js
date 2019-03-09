@@ -18,8 +18,10 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
     /* module factory */        function ModuleFactory__easyDb( undef ){
 "use strict";
 
-var VERSION = '0.9.0', PROTO = 'prototype', NotImplemented = new Error("Not Implemented!"),
-    NULL_CHAR = String.fromCharCode( 0 );
+var VERSION = '0.9.0', PROTO = 'prototype',
+    NotImplemented = new Error("Not Implemented!"),
+    NULL_CHAR = String.fromCharCode( 0 )
+;
 
 function addslashes( s, chars, esc )
 {
@@ -34,7 +36,10 @@ function addslashes( s, chars, esc )
     return s2;
 }
 
-var Db = function(config) { 
+var Db = function(config, quotes) { 
+    // by default use postgres-like quotes which are default for sql in general
+    if ( 2 > arguments.length || null == quotes ) quotes = [["'","'","''","''"],["\"","\"","\"\"","\"\""]];
+    this.quotes = quotes;
     this.config = config || {};
 };
 Db.VERSION = VERSION;
@@ -44,11 +49,12 @@ Db[PROTO] = {
     constructor: Db,
     
     // by default use Mysql-like quotes
-    quotes: ["'","'","\\'","\\'"],
+    quotes: null,
     config: null,
     insertId: null,
     
     dispose: function( ) {
+        this.quotes = null;
         this.config = null;
         return this;
     },
@@ -114,10 +120,10 @@ Db[PROTO] = {
     
     escape: function( v, cb ) {
         var self = this, chars, esc, i, l, ve, c, q;
-        // simple ecsaping using addslashes
+        // simple string ecsaping using addslashes
         // '"\ and NUL (the NULL byte).
-        q = self.quotes;
-        chars = '\\' + NULL_CHAR; esc = '\\';
+        q = self.quotes[0];
+        chars = NULL_CHAR + '\\'; esc = '\\';
         v = String(v); ve = '';
         for(i=0,l=v.length; i<l; i++)
         {
@@ -131,9 +137,24 @@ Db[PROTO] = {
     },
     
     escapeId: function( v, cb ) {
-        var ve = v;
+        var self = this, i, l, ve, c, q;
+        // simple identifier ecsaping using for example quotes doubling
+        q = self.quotes[1];
+        v = String(v); ve = '';
+        for(i=0,l=v.length; i<l; i++)
+        {
+            c = v.charAt(i);
+            if ( q[0] === c ) ve += q[2];
+            else if ( q[1] === c ) ve += q[3];
+            else ve += c;
+        }
         if ( 'function' === typeof cb ) cb(null, ve);
         return ve;
+    },
+    
+    escapeWillQuote: function( ) {
+        // whether escape functions will quote as well (ie wrap output in quotes or not)
+        return false;
     }
 };
 Db.DRIVER = {};

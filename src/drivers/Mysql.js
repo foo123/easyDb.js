@@ -16,9 +16,8 @@ module.exports = function( Db ) {
         {
             throw new Error('mysql2 module is not installed!');
         }
-        this.quotes = ["'","'","\\'","\\'"];
         // call super constructor
-        Db.call(this, config);
+        Db.call(this, config, [["'","'","\\'","\\'"],["`","`","``","``"]]);
     };
 
     Mysql[PROTO] = Object.create(Db[PROTO]);
@@ -55,16 +54,16 @@ module.exports = function( Db ) {
         return Db[PROTO].dispose.call(this);
     };
     
-    Mysql[PROTO].escape = function( s, cb ) {
-        var se = this.connect().connection.escape(''+s);
-        if ( 'function' === typeof cb ) cb(null, se);
-        return se;
+    Mysql[PROTO].escape = function( v, cb ) {
+        var ve = this.connect().connection.escape(''+v);
+        if ( 'function' === typeof cb ) cb(null, ve);
+        return ve;
     };
 
-    Mysql[PROTO].escapeId = function( s, cb ) {
-        var se = this.connect().connection.escapeId(''+s);
-        if ( 'function' === typeof cb ) cb(null, se);
-        return se;
+    Mysql[PROTO].escapeId = function( v, cb ) {
+        var ve = this.connect().connection.escapeId(''+v);
+        if ( 'function' === typeof cb ) cb(null, ve);
+        return ve;
     };
 
     Mysql[PROTO].query = function( sql, cb ) {
@@ -87,7 +86,7 @@ module.exports = function( Db ) {
                 self.insertId = result.insertId || null;
                 res = {
                     insertId: self.insertId,
-                    affectedRows: result.affectedRows /*|| result.changedRows*/ || null
+                    affectedRows: /*result.affectedRows ||*/ result.changedRows || null
                 };
             }
             cb(null, res);
@@ -115,7 +114,7 @@ module.exports = function( Db ) {
                 self.insertId = result.insertId || null;
                 res = {
                     insertId: self.insertId,
-                    affectedRows: result.affectedRows /*|| result.changedRows*/ || null
+                    affectedRows: /*result.affectedRows ||*/ result.changedRows || null
                 };
             }
             cb(null, res);

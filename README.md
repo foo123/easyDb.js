@@ -1,10 +1,12 @@
 # easyDb.js
 
-**Database access layer abstraction** for `Node.js` (supports `mysql`, `postgres`, `sqlite`,..)
+**Database abstraction layer (DBAL)** for `Node.js` (supports `mysql`, `postgres`, `sqlite3`,..)
 
 version 0.9.0
 
-`easyDb` is a database access layer abstraction (`DBAL`) for `Node.js`. It provides a unified way to access many different db drivers through a common API which supports both `callbacks` and `promises`.
+`easyDb` is a database abstraction layer (`DBAL`) for `Node.js`. It provides a unified way to access many different db drivers through a common API which supports both `callbacks` and `promises` plus literals and identifiers escaping, prepared queries and more.
+
+See also [Dialect](https://github.com/foo123/Dialect) which is a cross-platform &amp; cross-vendor SQL Query Builder for `Node.js` / `PHP` / `Python` and which can be used in conjunction with this framework to abstract sql query building easily.
 
 
 ### DB Drivers supported

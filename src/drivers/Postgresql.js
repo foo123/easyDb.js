@@ -74,9 +74,8 @@ module.exports = function( Db ) {
         {
             throw new Error('pg module is not installed!');
         }
-        this.quotes = ["E'","'","''","''"];
         // call super constructor
-        Db.call(this, config);
+        Db.call(this, config, [["'","'","''","''"],["\"","\"","\"\"","\"\""]]);
     };
 
     Postgresql[PROTO] = Object.create(Db[PROTO]);
@@ -111,17 +110,21 @@ module.exports = function( Db ) {
         return Db[PROTO].dispose.call(this);
     };
     
-    /*Postgresql[PROTO].escape = function( s, cb ) {
-        var se = quoteLiteral(''+s);
-        if ( 'function' === typeof cb ) cb(null, se);
-        return se;
+    Postgresql[PROTO].escape = function( v, cb ) {
+        var ve = quoteLiteral(''+v);
+        if ( 'function' === typeof cb ) cb(null, ve);
+        return ve;
     };
 
-    Postgresql[PROTO].escapeId = function( s, cb ) {
-        var se = quoteIdent(''+s);
-        if ( 'function' === typeof cb ) cb(null, se);
-        return se;
-    };*/
+    Postgresql[PROTO].escapeId = function( v, cb ) {
+        var ve = quoteIdent(''+v);
+        if ( 'function' === typeof cb ) cb(null, ve);
+        return ve;
+    };
+    
+    Postgresql[PROTO].escapeWillQuote = function( ) {
+        return true;
+    };
 
     Postgresql[PROTO].query = function( sql, cb ) {
         var self = this;

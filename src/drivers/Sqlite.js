@@ -16,9 +16,8 @@ module.exports = function( Db ) {
         {
             throw new Error('sqlite3 module is not installed!');
         }
-        this.quotes = ["'","'","''","''"];
         // call super constructor
-        Db.call(this, config);
+        Db.call(this, config, [["'","'","''","''"],["\"","\"","\"\"","\"\""]]);
     };
 
     Sqlite[PROTO] = Object.create(Db[PROTO]);
@@ -29,7 +28,7 @@ module.exports = function( Db ) {
         if ( !this.connection )
         {
             var config = this.config;
-            this.connection = new sqlite3.Database(config.database||':memory:');
+            this.connection = new sqlite.Database(config.database||':memory:');
         }
         return this;
     };
@@ -64,6 +63,45 @@ module.exports = function( Db ) {
         else
         {
             this.connect().connection.run(sql, [], function(err){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                // normalise result
+                var res;
+                self.insertId = this.lastID || null;
+                res = {
+                    insertId: self.insertId,
+                    affectedRows: this.changes || null
+                };
+                cb(null, res);
+            });
+        }
+        return this;
+    };
+
+    Sqlite[PROTO].exec = function( sql, repl, cb ) {
+        var self = this;
+        sql = ''+sql;
+        // https://github.com/mapbox/node-sqlite3/issues/1125
+        if ( Db.SELECT_RE.test(sql) )
+        {
+            this.connect().connection.all(sql, repl, function(err,rows){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                // normalise result
+                var res;
+                res = rows;
+                cb(null, res);
+            });
+        }
+        else
+        {
+            this.connect().connection.run(sql, repl, function(err){
                 if ( err )
                 {
                     cb(err, null);
